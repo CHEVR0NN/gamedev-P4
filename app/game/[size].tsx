@@ -1,6 +1,9 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { useLocalSearchParams, router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
+import xImage from './x.png';
+import oImage from './o.png';
 
 export default function Game() {
   const { size } = useLocalSearchParams();
@@ -44,7 +47,7 @@ export default function Game() {
           }
           patterns.push(pattern);
         }
-        // Diagonal ↘
+        // Diagonal left to right
         if (row <= size - winCondition && col <= size - winCondition) {
           const pattern = [];
           for (let i = 0; i < winCondition; i++) {
@@ -52,7 +55,7 @@ export default function Game() {
           }
           patterns.push(pattern);
         }
-        // Diagonal ↙
+        // Diagonal right to left
         if (row <= size - winCondition && col >= winCondition - 1) {
           const pattern = [];
           for (let i = 0; i < winCondition; i++) {
@@ -97,35 +100,74 @@ export default function Game() {
     setWinner(null);
   };
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.turnText}>{winner ? (winner === "Draw" ? "It's a draw!" : `${winner} wins!`) : `Current Player: ${currentPlayer}`}</Text>
+  // Calculate cell size dynamically based on grid size
+  const cellSize = gridSize <= 4 ? 80 : gridSize <= 6 ? 60 : 50;
 
-      <View style={{ ...styles.board, width: gridSize * 60, height: gridSize * 60 }}>
+  return (
+    <LinearGradient colors={['#fff', '#f4fffe']} style={styles.container}>
+      {/* Player 2's Turn */}
+      <View style={styles.top}>
+        <View style={[styles.turnBox, { backgroundColor: '#f49019', top: 0 }]}>
+          <Text style={[styles.turnText, currentPlayer === "O" && { transform: [{ rotate: '180deg' }] }]}>
+            {currentPlayer === "O" ? "Your turn" : ""}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.buttons}>
+        <TouchableOpacity style={styles.back} onPress={() => router.push("/modeselection")}>
+          <Text style={styles.backtext}>Go back</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={resetGame} style={styles.back}>
+          <Text style={styles.backtext}>Reset Game</Text>
+        </TouchableOpacity>
+      </View>
+
+      <Text style={styles.resulttxt}>{winner ? (winner === "Draw" ? "It's a draw!" : `${winner} wins!`) :" "}</Text>
+
+      {/* Game Board */}
+      <View style={{ ...styles.board, width: gridSize * cellSize, height: gridSize * cellSize }}>
         {board.map((cell, index) => (
           <TouchableOpacity
             key={index}
-            style={{ ...styles.cell, width: `${100 / gridSize}%`, height: `${100 / gridSize}%` }}
+            style={{
+              ...styles.cell,
+              width: `${100 / gridSize}%`,
+              height: `${100 / gridSize}%`,
+            }}
             onPress={() => handlePress(index)}
           >
-            <Text style={styles.cellText}>{cell}</Text>
+            {cell === "X" && <Image source={xImage} style={styles.icon} />}
+            {cell === "O" && <Image source={oImage} style={styles.icon} />}
           </TouchableOpacity>
         ))}
       </View>
 
-      <TouchableOpacity onPress={resetGame} style={styles.resetButton}>
-        <Text style={styles.resetButtonText}>Reset Game</Text>
-      </TouchableOpacity>
-    </View>
+      {/* Player 1's Turn */}
+      <View style={styles.bottom}>
+        <View style={[styles.turnBox, { backgroundColor: '#2ec4b6', bottom: 0 }]}>
+          <Text style={styles.turnText}>
+            {currentPlayer === "X" ? "Your turn" : ""}
+          </Text>
+        </View>
+      </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f5f5' },
-  turnText: { fontSize: 20, marginBottom: 20 },
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' },
+  back: { alignSelf: "flex-start", marginTop: 30, padding: 10 },
+  backtext: { color: "#000", fontSize: 18, fontFamily: "Poppins", fontWeight: "600", textAlign: "center", textDecorationLine: "underline" },  
+  turnBox: { position: 'absolute', width: '100%', height: 80, justifyContent: 'center', alignItems: 'center' },
+  turnText: { fontSize: 24, fontWeight: 'bold', color: 'white' },  
   board: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 20 },
-  cell: { justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: 'black', backgroundColor: '#fff' },
+  cell: { justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: 'white', backgroundColor: '#35dccc' },
   cellText: { fontSize: 24, fontWeight: 'bold' },
-  resetButton: { backgroundColor: '#4CAF50', padding: 10, borderRadius: 5 },
-  resetButtonText: { color: '#fff', fontSize: 16 },
+  top: { position: 'absolute', top: 0, width: '100%', alignItems: 'center', paddingTop: 10 },
+  bottom: { position: 'absolute', bottom: 0, width: '100%', alignItems: 'center', paddingBottom: 10 },
+  buttons: { flexDirection: "row", justifyContent: "space-between", width: "100%"},
+  icon: { resizeMode: "contain", height: 40, width: 40 },
+  resulttxt: { fontSize: 24, fontWeight: 'bold', color: '#f49019' }, 
 });
